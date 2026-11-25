@@ -20,7 +20,7 @@ from reportlab.platypus import (BaseDocTemplate, PageTemplate, Frame, Paragraph,
 HERE = os.path.dirname(os.path.abspath(__file__))
 PAGES = os.environ.get("PAGES_DIR", os.path.join(HERE, "work", "pages"))
 OUT = os.path.join(HERE, "output")
-SEED = int(sys.argv[1]) if len(sys.argv) > 1 else 20261124
+SEED = int(next((a for a in sys.argv[1:] if a.isdigit()), 20261124))
 
 D = "https://drive.google.com/file/d/"
 SITE = "https://sites.google.com/site/mathmanti/"
@@ -110,14 +110,14 @@ class PageLogger(Flowable):
     def draw(self): self.log[self.ex_id] = self.canv.getPageNumber()
 
 
-def build(order, pagelog, index_pages=None):
+def build(order, pagelog, index_pages=None, outname=None, lesson=None):
     os.makedirs(OUT, exist_ok=True)
-    pdf = os.path.join(OUT, f"math_manti_1bacsm_seed{SEED}.pdf")
+    pdf = os.path.join(OUT, outname or f"math_manti_1bacsm_seed{SEED}.pdf")
     W, H = A4
     m = 18 * mm
     cw = W - 2 * m
     doc = BaseDocTemplate(pdf, pagesize=A4, leftMargin=m, rightMargin=m, topMargin=16 * mm, bottomMargin=16 * mm,
-                          title="Entraînement 1ère Bac SM - énoncés (Math Manti)", author="Compilation personnelle")
+                          title="Entraînement 1ère Bac SM%s - énoncés (Math Manti)" % (" - " + lesson if lesson else ""), author="Compilation personnelle")
 
     def footer(c, d):
         c.saveState(); c.setFont("Helvetica", 8); c.setFillColor(colors.grey)
@@ -131,17 +131,17 @@ def build(order, pagelog, index_pages=None):
     body = ParagraphStyle("body", fontName="Helvetica", fontSize=10, leading=14)
     st = []
     # cover
-    counts = {t: sum(1 for e in EXERCISES if e[1] == t) for t in TOPICS}
-    st += [Spacer(1, 45 * mm), Paragraph("Entraînement — 1ère Bac Sciences Mathématiques", h1),
-           Paragraph("Énoncés seuls · Ensembles · Applications · Fonctions · Suites", sub), Spacer(1, 12 * mm)]
-    rows = [["Thème", "Exercices"]] + [[t, str(counts[t])] for t in TOPICS] + [["Total", str(len(EXERCISES))]]
+    counts = {t: sum(1 for e in order if e[1] == t) for t in TOPICS}
+    st += [Spacer(1, 45 * mm), Paragraph(("Leçon : " + lesson + " — " if lesson else "") + "Entraînement — 1ère Bac Sciences Mathématiques", h1),
+           Paragraph("Énoncés seuls" if lesson else "Énoncés seuls · Ensembles · Applications · Fonctions · Suites", sub), Spacer(1, 12 * mm)]
+    rows = [["Thème", "Exercices"]] + [[t, str(counts[t])] for t in TOPICS if counts[t]] + [["Total", str(len(order))]]
     tb = Table(rows, colWidths=[60 * mm, 30 * mm], hAlign="CENTER")
     tb.setStyle(TableStyle([("FONT", (0, 0), (-1, 0), "Helvetica-Bold", 10), ("FONT", (0, 1), (-1, -2), "Helvetica", 10),
                             ("FONT", (0, -1), (-1, -1), "Helvetica-Bold", 10), ("LINEBELOW", (0, 0), (-1, 0), 0.8, colors.black),
                             ("LINEABOVE", (0, -1), (-1, -1), 0.8, colors.black), ("ALIGN", (1, 0), (1, -1), "CENTER"),
                             ("BOTTOMPADDING", (0, 0), (-1, -1), 5), ("TOPPADDING", (0, 0), (-1, -1), 5)]))
     st += [tb, Spacer(1, 12 * mm),
-           Paragraph(f"Ordre aléatoire — graine (seed) : <b>{SEED}</b> · généré le {datetime.date.today().isoformat()}", sub), Spacer(1, 4 * mm),
+           Paragraph((f"Leçon : <b>{lesson}</b> — ordre des séries d'origine" if lesson else f"Ordre aléatoire — graine (seed) : <b>{SEED}</b>") + f" · généré le {datetime.date.today().isoformat()}", sub), Spacer(1, 4 * mm),
            Paragraph("Source : documents publics des sites « mathmanti » (Google Sites) et « mathmanti2 » (Webnode) de Bouchaib Manti. Aucune correction incluse. "
                      "Usage personnel uniquement — ne pas republier.", sub), PageBreak()]
     # exercises
@@ -190,6 +190,17 @@ def pack(order, avail_mm=A4[1] / mm - 32, window=8):
     return out
 
 
+def by_lesson():
+    """One PDF per topic, exercises in source order (series by series), no shuffle."""
+    key = lambda e: (DOCS[e[2]][0].startswith('Contrôle') or DOCS[e[2]][0].startswith('Feuille'), DOCS[e[2]][0], e[0])
+    for t in TOPICS:
+        order = pack(sorted([e for e in EXERCISES if e[1] == t], key=key))
+        log = {}
+        name = f"lecon_{t.lower()}.pdf"
+        build(order, log, outname=name, lesson=t)
+        print(build(order, log, outname=name, lesson=t), len(order))
+
+
 def main():
     order = EXERCISES[:]
     random.Random(SEED).shuffle(order)
@@ -207,4 +218,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if "--by-lesson" in sys.argv:
+        by_lesson()
+    else:
+        main()
