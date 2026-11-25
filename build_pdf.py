@@ -7,7 +7,7 @@ Inputs : PAGES dir (200-dpi PNG renders of the downloaded source PDFs) + the EXE
 Outputs: output/math_manti_1bacsm_seed<SEED>.pdf and output/exercices.csv
 Personal study use only - do not republish the source material.
 """
-import csv, os, random, sys, datetime
+import csv, json, os, random, sys, datetime
 from PIL import Image
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
@@ -55,6 +55,15 @@ EXERCISES = [
 ]
 TOPICS = ["Ensembles", "Applications", "Fonctions", "Suites"]
 
+# second source: typed series from mathmanti2.webnode.fr (already segmented into work/ex_new/*.png + work/new_set.json)
+NEW = os.path.join(HERE, "work", "new_set.json")
+if os.path.exists(NEW):
+    for r in json.load(open(NEW, encoding="utf8")):
+        key = "N:" + r["doc"]
+        DOCS.setdefault(key, (r["doc"], r["link"]))
+        EXERCISES.append((r["id"], r["topic"], key, r["label"], [("@png", os.path.join(HERE, "work", "ex_new", r["id"] + ".png"))]))
+SOURCE = lambda ex_id: "mathmanti2 (mathmanti2.webnode.fr)" if ex_id.startswith("M") else "mathmanti (sites.google.com/site/mathmanti)"
+
 
 def autotrim(im, pad=6):
     """Trim blank margins only when the background is near-white (typed sheets)."""
@@ -75,6 +84,8 @@ def autotrim(im, pad=6):
 def make_crop(ex_id, crops):
     parts = []
     for page, box in crops:
+        if page == "@png":
+            parts.append(Image.open(box).convert("RGB")); continue
         im = Image.open(os.path.join(PAGES, page + ".png")).convert("RGB").crop(box)
         parts.append(autotrim(im))
     if len(parts) == 1:
@@ -131,17 +142,17 @@ def build(order, pagelog, index_pages=None):
                             ("BOTTOMPADDING", (0, 0), (-1, -1), 5), ("TOPPADDING", (0, 0), (-1, -1), 5)]))
     st += [tb, Spacer(1, 12 * mm),
            Paragraph(f"Ordre aléatoire — graine (seed) : <b>{SEED}</b> · généré le {datetime.date.today().isoformat()}", sub), Spacer(1, 4 * mm),
-           Paragraph("Source : documents publics du site Google Sites « mathmanti » (Bouchaib Manti). Aucune correction incluse. "
+           Paragraph("Source : documents publics des sites « mathmanti » (Google Sites) et « mathmanti2 » (Webnode) de Bouchaib Manti. Aucune correction incluse. "
                      "Usage personnel uniquement — ne pas republier.", sub), PageBreak()]
     # exercises
     for n, ex in enumerate(order, 1):
         ex_id, topic, doc_key, label, _ = ex
         path, (pw, ph) = make_crop(ex_id, ex[4])
-        natural = pw / 200 * 25.4 * mm * 1.15          # do not enlarge beyond ~115 % of the 200-dpi size
+        natural = pw / 200 * 25.4 * mm * 1.05          # do not enlarge beyond ~105 % of the 200-dpi size
         w = min(cw, natural, (pw / ph) * 225 * mm)       # keep any block under 225 mm tall
         h = w * ph / pw
         title, link = DOCS[doc_key]
-        caption = Paragraph(f"<b>{n}.</b> [{ex_id}] {topic} — Math Manti (mathmanti) · {title} · {label}", cap)
+        caption = Paragraph(f"<b>{n}.</b> [{ex_id}] {topic} — Math Manti ({SOURCE(ex_id).split()[0]}) · {title} · {label}", cap)
         st.append(KeepTogether([PageLogger(ex_id, pagelog), RLImage(path, width=w, height=h), caption, Spacer(1, 9 * mm)]))
     # index at the end
     st += [PageBreak(), Paragraph("Index", ParagraphStyle("ih", fontName="Helvetica-Bold", fontSize=16, spaceAfter=8))]
@@ -157,9 +168,32 @@ def build(order, pagelog, index_pages=None):
     return pdf
 
 
+def block_height_mm(ex):
+    """Estimated height (mm) of an exercise block: image + 2-line caption + spacing."""
+    path, (pw, ph) = make_crop(ex[0], ex[4])
+    cw = A4[0] - 36 * mm
+    w = min(cw, pw / 200 * 25.4 * mm * 1.05, (pw / ph) * 225 * mm)
+    return w * ph / pw / mm + 21
+
+
+def pack(order, avail_mm=A4[1] / mm - 32, window=8):
+    """Look-ahead packing: keep the shuffled order, but when the next block does not fit on the
+    current page take the first of the next `window` blocks that does (blocks never split)."""
+    rem, out, left = list(order), [], avail_mm
+    while rem:
+        pick = next((i for i, e in enumerate(rem[:window]) if block_height_mm(e) <= left), None)
+        if pick is None:
+            left, pick = avail_mm, 0
+        e = rem.pop(pick)
+        out.append(e)
+        left -= block_height_mm(e)
+    return out
+
+
 def main():
     order = EXERCISES[:]
     random.Random(SEED).shuffle(order)
+    order = pack(order)
     log = {}
     build(order, log)          # pass 1: learn page numbers
     pdf = build(order, log)    # pass 2: index now filled (index is after the exercises, so pages do not move)
@@ -168,7 +202,7 @@ def main():
         w.writerow(["id", "topic", "language", "source", "link", "document", "exercise", "pdf_order", "pdf_page", "seed"])
         for n, ex in enumerate(order, 1):
             title, link = DOCS[ex[2]]
-            w.writerow([ex[0], ex[1], "French", "sites.google.com/site/mathmanti (public Drive file)", link, title, ex[3], n, log.get(ex[0]), SEED])
+            w.writerow([ex[0], ex[1], "French", SOURCE(ex[0]) + " - public Drive file", link, title, ex[3], n, log.get(ex[0]), SEED])
     print("PDF:", pdf, "| seed", SEED, "| order:", " ".join(e[0] for e in order))
 
 
