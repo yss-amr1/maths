@@ -54,6 +54,9 @@ EXERCISES = [
     ("E18", "Suites", "CC2S2_2021", "Ex. 1", [("ctrl2S2_1BACSM-1", (50, 279, 1610, 1425))]),
 ]
 TOPICS = ["Ensembles", "Applications", "Fonctions", "Suites"]
+RATINGS = json.load(open(os.path.join(HERE, 'work', 'ratings.json'))) if os.path.exists(os.path.join(HERE, 'work', 'ratings.json')) else {}
+RATE = lambda i: RATINGS.get(i)
+RTXT = lambda i: (f'{RATE(i)}/20' if RATE(i) is not None else '')
 
 # second source: typed series from mathmanti2.webnode.fr (already segmented into work/ex_new/*.png + work/new_set.json)
 NEW = os.path.join(HERE, "work", "new_set.json")
@@ -172,8 +175,8 @@ def build(pages, pagelog, outname=None, lesson=None, flat=None):
                           title="Entraînement 1ère Bac SM%s - énoncés (Math Manti)" % (" - " + lesson if lesson else ""), author="Compilation personnelle")
 
     def footer(c, d):
-        c.saveState(); c.setFont("Helvetica", 7); c.setFillColor(colors.grey)
-        c.drawCentredString(PG_W / 2, 6 * mm, f"Usage personnel — énoncés uniquement — page {d.page}")
+        c.saveState(); c.setFont("Helvetica", 9); c.setFillColor(colors.HexColor("#333333"))
+        c.drawCentredString(PG_W / 2, 6 * mm, str(d.page))
         c.restoreState()
     fw = dict(leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
     doc.addPageTemplates([
@@ -193,10 +196,7 @@ def build(pages, pagelog, outname=None, lesson=None, flat=None):
                             ("FONT", (0, -1), (-1, -1), "Helvetica-Bold", 10), ("LINEBELOW", (0, 0), (-1, 0), 0.8, colors.black),
                             ("LINEABOVE", (0, -1), (-1, -1), 0.8, colors.black), ("ALIGN", (1, 0), (1, -1), "CENTER"),
                             ("BOTTOMPADDING", (0, 0), (-1, -1), 5), ("TOPPADDING", (0, 0), (-1, -1), 5)]))
-    st += [tb, Spacer(1, 12 * mm),
-           Paragraph((f"Leçon : <b>{lesson}</b> — ordre des séries d'origine" if lesson else f"Ordre aléatoire — graine (seed) : <b>{SEED}</b>") + f" · généré le {datetime.date.today().isoformat()}", sub), Spacer(1, 4 * mm),
-           Paragraph("Source : documents publics des sites « mathmanti » (Google Sites) et « mathmanti2 » (Webnode) de Bouchaib Manti. Aucune correction incluse. "
-                     "Usage personnel uniquement — ne pas republier.", sub)]
+    st += [tb]
     n = 0
     for cls, cols in pages:
         st += [NextPageTemplate(cls), PageBreak()]
@@ -206,13 +206,13 @@ def build(pages, pagelog, outname=None, lesson=None, flat=None):
                 n += 1
                 c, w, h, _ = layout(ex)
                 title = DOCS[ex[2]][0]
-                short = f"<b>{n}.</b> [{ex[0]}] {ex[1]} · {title} · {ex[3]}" + ("" if True else "")
+                short = f"<b>{n}.</b> [{ex[0]}] {ex[1]} · {title} · {ex[3]} &nbsp;—&nbsp; <b>Difficulté : {RTXT(ex[0])}</b>"
                 st.append(KeepTogether([PageLogger(ex[0], pagelog), RLImage(make_crop(ex[0], ex[4])[0], width=w, height=h), Paragraph(short, cap), Spacer(1, 1.6 * mm)]))
     st += [NextPageTemplate("W"), PageBreak(), Paragraph("Index", ParagraphStyle("ih", fontName="Helvetica-Bold", fontSize=14, spaceAfter=6))]
-    idx = [["#", "ID", "Thème", "Document", "Exercice", "Page"]]
+    idx = [["#", "ID", "Thème", "Document", "Exercice", "Diff.", "Page"]]
     for i, ex in enumerate(sorted_by_print(pages), 1):
-        idx.append([str(i), ex[0], ex[1], DOCS[ex[2]][0], ex[3], str(pagelog.get(ex[0], "?"))])
-    it = Table(idx, colWidths=[9 * mm, 13 * mm, 24 * mm, 96 * mm, 38 * mm, 10 * mm], repeatRows=1)
+        idx.append([str(i), ex[0], ex[1], DOCS[ex[2]][0], ex[3], RTXT(ex[0]), str(pagelog.get(ex[0], "?"))])
+    it = Table(idx, colWidths=[8 * mm, 12 * mm, 23 * mm, 84 * mm, 34 * mm, 12 * mm, 10 * mm], repeatRows=1)
     it.setStyle(TableStyle([("FONT", (0, 0), (-1, 0), "Helvetica-Bold", 7), ("FONT", (0, 1), (-1, -1), "Helvetica", 6.8),
                             ("LINEBELOW", (0, 0), (-1, 0), 0.6, colors.black), ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f3f3f3")]),
                             ("BOTTOMPADDING", (0, 0), (-1, -1), 1.4), ("TOPPADDING", (0, 0), (-1, -1), 1.4)]))
@@ -245,10 +245,10 @@ def main():
     pdf = build(pages, log)    # pass 2: index now filled (index is after the exercises, so pages do not move)
     with open(os.path.join(OUT, "exercices.csv"), "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["id", "topic", "language", "source", "link", "document", "exercise", "pdf_order", "pdf_page", "seed"])
+        w.writerow(["id", "topic", "language", "source", "link", "document", "exercise", "difficulty_20", "pdf_order", "pdf_page", "seed"])
         for n, ex in enumerate(order, 1):
             title, link = DOCS[ex[2]]
-            w.writerow([ex[0], ex[1], "French", SOURCE(ex[0]) + " - public Drive file", link, title, ex[3], n, log.get(ex[0]), SEED])
+            w.writerow([ex[0], ex[1], "French", SOURCE(ex[0]) + " - public Drive file", link, title, ex[3], RATE(ex[0]), n, log.get(ex[0]), SEED])
     print("PDF:", pdf, "| seed", SEED, "| order:", " ".join(e[0] for e in order))
 
 
