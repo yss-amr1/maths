@@ -65,6 +65,8 @@ if os.path.exists(NEW):
         key = "N:" + r["doc"]
         DOCS.setdefault(key, (r["doc"], r["link"]))
         EXERCISES.append((r["id"], r["topic"], key, r["label"], [("@png", os.path.join(HERE, "work", "ex_new", r["id"] + ".png"))]))
+EXCL = set(json.load(open(os.path.join(HERE, 'tools', 'excluded.json')))['ids']) if os.path.exists(os.path.join(HERE, 'tools', 'excluded.json')) else set()
+EXERCISES[:] = [e for e in EXERCISES if e[0] not in EXCL]
 SOURCE = lambda ex_id: "mathmanti2 (mathmanti2.webnode.fr)" if ex_id.startswith("M") else "mathmanti (sites.google.com/site/mathmanti)"
 
 
