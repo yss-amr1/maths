@@ -72,11 +72,12 @@ for pdf in sorted(glob.glob(os.path.join(src, '*.pdf'))):
             for w in orphan:
                 if lines and abs(lines[-1][0] - w[2]) < 5: lines[-1][1].append(w)
                 else: lines.append([w[2], [w]])
-            while lines and (lines[0][0] < 80 and len(lines[0][1]) <= 6 or any(re.search(r'manti|bac|1ère|1er|ensembles?|applications?|fonctions?|suites?|2016|2017|2018|2019', ww[0], re.I) and lines[0][0] < 90 for ww in lines[0][1])):
+            while lines and lines[0][0] < 62 and any(re.search(r'manti|bac|1ère|1er|ensembles?|applications?|fonctions?|suites?|num[ée]riques|20\d\d', ww[0], re.I) for ww in lines[0][1]):
                 lines.pop(0)
             if lines and last is not None:
                 oy0 = min(w[2] for l in lines for w in l[1]) - 4
-                box = (int(L * S), int(oy0 * S), int(R * S), int((first - A0) * S))
+                oy1 = max(w[4] for l in lines for w in l[1]) + 4
+                box = (int(L * S), int(oy0 * S), int(R * S), int(min(oy1, first - 2) * S))
                 if box[3] - box[1] > 25:
                     name = '%s__p%d_c%d_cont.png' % (base, pi, ci)
                     img.crop(box).save(os.path.join(out, name))

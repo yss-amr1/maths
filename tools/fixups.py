@@ -17,3 +17,7 @@ fix = {'ens_app_s9_19_p1c0k1': cp(S9a, 50, 398), 'ens_app_s9_19_p1c0k2': cp(S9a,
 for r in rows:
     if r['src_id'] in fix:
         fix[r['src_id']].save(f"/home/user/maths/work/ex_new/{r['id']}.png"); print('fixed', r['id'], r['src_id'])
+# trim the sliver of the next exercise's title under M161
+for r in rows:
+    if r['id'] == 'M161':
+        p = f"/home/user/maths/work/ex_new/{r['id']}.png"; t = Image.open(p); t.crop((0, 0, t.width, t.height - 28)).save(p); print('trimmed', r['id'])
