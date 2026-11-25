@@ -14,7 +14,7 @@ from reportlab.lib.units import mm
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib import colors
-from reportlab.platypus import (BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer,
+from reportlab.platypus import (NextPageTemplate, FrameBreak, BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer,
                                 Image as RLImage, KeepTogether, PageBreak, Table, TableStyle, Flowable)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -110,31 +110,84 @@ class PageLogger(Flowable):
     def draw(self): self.log[self.ex_id] = self.canv.getPageNumber()
 
 
-def build(order, pagelog, index_pages=None, outname=None, lesson=None):
+# ---- compact print layout -------------------------------------------------------------
+PG_W, PG_H = A4
+MARG_X, MARG_TOP, MARG_BOT, GAP = 10 * mm, 11 * mm, 13 * mm, 6 * mm
+FRAME_H = PG_H - MARG_TOP - MARG_BOT
+COL_W = (PG_W - 2 * MARG_X - GAP) / 2
+WIDE_W = PG_W - 2 * MARG_X
+SCANS = {"E%02d" % i for i in range(1, 12)}          # handwritten scans: kept large (they lose legibility when shrunk)
+COL_SCALE, WIDE_SCALE, SCAN_MAX_W = 0.85, 0.82, 150 * mm
+
+
+def layout(ex):
+    """-> (class 'C' two-column | 'W' full width, width_pt, height_pt, caption_height_pt)"""
+    path, (pw, ph) = make_crop(ex[0], ex[4])
+    nat = pw / 200 * 25.4 * mm
+    if ex[0] in SCANS:
+        w, cls = min(SCAN_MAX_W, nat), "W"
+    elif nat <= 134 * mm:
+        w, cls = min(COL_W, nat * COL_SCALE), "C"
+    else:
+        w, cls = min(WIDE_W, nat * WIDE_SCALE), "W"
+    w = min(w, (pw / ph) * (FRAME_H - 12 * mm))
+    return cls, w, w * ph / pw, (7.5 if cls == "C" else 4.2) * mm
+
+
+def block_h(ex):
+    cls, w, h, c = layout(ex)
+    return h + c + 2.2 * mm
+
+
+def plan(order, window=16):
+    """Pages as ('W'|'C', [items] or ([col1],[col2])). Keeps the given order, but looks ahead up to
+    `window` blocks to fill a page; a block is never split."""
+    rem, pages = list(order), []
+    while rem:
+        cls = layout(rem[0])[0]
+        pool = [e for e in rem[:window] if layout(e)[0] == cls]
+        cols = 2 if cls == "C" else 1
+        taken, out = [], []
+        for _ in range(cols):
+            left, col = FRAME_H - 1.5 * mm, []
+            progress = True
+            while progress:
+                progress = False
+                for e in pool:
+                    if e not in taken and block_h(e) <= left:
+                        col.append(e); taken.append(e); left -= block_h(e); progress = True; break
+            out.append(col)
+        if not taken:                     # safety: item taller than a frame -> place alone
+            taken = [rem[0]]; out = [[rem[0]]] + [[] for _ in range(cols - 1)]
+        for e in taken: rem.remove(e)
+        pages.append((cls, out))
+    return pages
+
+
+def build(pages, pagelog, outname=None, lesson=None, flat=None):
     os.makedirs(OUT, exist_ok=True)
     pdf = os.path.join(OUT, outname or f"math_manti_1bacsm_seed{SEED}.pdf")
-    W, H = A4
-    m = 18 * mm
-    cw = W - 2 * m
-    doc = BaseDocTemplate(pdf, pagesize=A4, leftMargin=m, rightMargin=m, topMargin=16 * mm, bottomMargin=16 * mm,
+    flat = flat or [e for _, cols in pages for col in cols for e in col]
+    doc = BaseDocTemplate(pdf, pagesize=A4, leftMargin=MARG_X, rightMargin=MARG_X, topMargin=MARG_TOP, bottomMargin=MARG_BOT,
                           title="Entraînement 1ère Bac SM%s - énoncés (Math Manti)" % (" - " + lesson if lesson else ""), author="Compilation personnelle")
 
     def footer(c, d):
-        c.saveState(); c.setFont("Helvetica", 8); c.setFillColor(colors.grey)
-        c.drawCentredString(W / 2, 9 * mm, f"Usage personnel — énoncés uniquement — page {d.page}")
+        c.saveState(); c.setFont("Helvetica", 7); c.setFillColor(colors.grey)
+        c.drawCentredString(PG_W / 2, 6 * mm, f"Usage personnel — énoncés uniquement — page {d.page}")
         c.restoreState()
-    doc.addPageTemplates([PageTemplate(id="p", frames=[Frame(m, 16 * mm, cw, H - 32 * mm, id="f", leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)], onPage=footer)])
+    fw = dict(leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
+    doc.addPageTemplates([
+        PageTemplate(id="W", frames=[Frame(MARG_X, MARG_BOT, WIDE_W, FRAME_H, id="w", **fw)], onPage=footer),
+        PageTemplate(id="C", frames=[Frame(MARG_X, MARG_BOT, COL_W, FRAME_H, id="c1", **fw), Frame(MARG_X + COL_W + GAP, MARG_BOT, COL_W, FRAME_H, id="c2", **fw)], onPage=footer)])
 
     h1 = ParagraphStyle("h1", fontName="Helvetica-Bold", fontSize=22, leading=28, alignment=TA_CENTER, spaceAfter=6)
     sub = ParagraphStyle("sub", fontName="Helvetica", fontSize=11, leading=15, alignment=TA_CENTER, textColor=colors.HexColor("#444444"))
-    cap = ParagraphStyle("cap", fontName="Helvetica", fontSize=7.8, leading=10, textColor=colors.HexColor("#555555"), spaceBefore=2)
-    body = ParagraphStyle("body", fontName="Helvetica", fontSize=10, leading=14)
+    cap = ParagraphStyle("cap", fontName="Helvetica", fontSize=6.3, leading=7.6, textColor=colors.HexColor("#555555"), spaceBefore=1)
     st = []
-    # cover
-    counts = {t: sum(1 for e in order if e[1] == t) for t in TOPICS}
+    counts = {t: sum(1 for e in flat if e[1] == t) for t in TOPICS}
     st += [Spacer(1, 45 * mm), Paragraph(("Leçon : " + lesson + " — " if lesson else "") + "Entraînement — 1ère Bac Sciences Mathématiques", h1),
            Paragraph("Énoncés seuls" if lesson else "Énoncés seuls · Ensembles · Applications · Fonctions · Suites", sub), Spacer(1, 12 * mm)]
-    rows = [["Thème", "Exercices"]] + [[t, str(counts[t])] for t in TOPICS if counts[t]] + [["Total", str(len(order))]]
+    rows = [["Thème", "Exercices"]] + [[t, str(counts[t])] for t in TOPICS if counts[t]] + [["Total", str(len(flat))]]
     tb = Table(rows, colWidths=[60 * mm, 30 * mm], hAlign="CENTER")
     tb.setStyle(TableStyle([("FONT", (0, 0), (-1, 0), "Helvetica-Bold", 10), ("FONT", (0, 1), (-1, -2), "Helvetica", 10),
                             ("FONT", (0, -1), (-1, -1), "Helvetica-Bold", 10), ("LINEBELOW", (0, 0), (-1, 0), 0.8, colors.black),
@@ -143,71 +196,53 @@ def build(order, pagelog, index_pages=None, outname=None, lesson=None):
     st += [tb, Spacer(1, 12 * mm),
            Paragraph((f"Leçon : <b>{lesson}</b> — ordre des séries d'origine" if lesson else f"Ordre aléatoire — graine (seed) : <b>{SEED}</b>") + f" · généré le {datetime.date.today().isoformat()}", sub), Spacer(1, 4 * mm),
            Paragraph("Source : documents publics des sites « mathmanti » (Google Sites) et « mathmanti2 » (Webnode) de Bouchaib Manti. Aucune correction incluse. "
-                     "Usage personnel uniquement — ne pas republier.", sub), PageBreak()]
-    # exercises
-    for n, ex in enumerate(order, 1):
-        ex_id, topic, doc_key, label, _ = ex
-        path, (pw, ph) = make_crop(ex_id, ex[4])
-        natural = pw / 200 * 25.4 * mm * 1.05          # do not enlarge beyond ~105 % of the 200-dpi size
-        w = min(cw, natural, (pw / ph) * 225 * mm)       # keep any block under 225 mm tall
-        h = w * ph / pw
-        title, link = DOCS[doc_key]
-        caption = Paragraph(f"<b>{n}.</b> [{ex_id}] {topic} — Math Manti ({SOURCE(ex_id).split()[0]}) · {title} · {label}", cap)
-        st.append(KeepTogether([PageLogger(ex_id, pagelog), RLImage(path, width=w, height=h), caption, Spacer(1, 9 * mm)]))
-    # index at the end
-    st += [PageBreak(), Paragraph("Index", ParagraphStyle("ih", fontName="Helvetica-Bold", fontSize=16, spaceAfter=8))]
+                     "Usage personnel uniquement — ne pas republier.", sub)]
+    n = 0
+    for cls, cols in pages:
+        st += [NextPageTemplate(cls), PageBreak()]
+        for ci, col in enumerate(cols):
+            if ci: st.append(FrameBreak())
+            for ex in col:
+                n += 1
+                c, w, h, _ = layout(ex)
+                title = DOCS[ex[2]][0]
+                short = f"<b>{n}.</b> [{ex[0]}] {ex[1]} · {title} · {ex[3]}" + ("" if True else "")
+                st.append(KeepTogether([PageLogger(ex[0], pagelog), RLImage(make_crop(ex[0], ex[4])[0], width=w, height=h), Paragraph(short, cap), Spacer(1, 1.6 * mm)]))
+    st += [NextPageTemplate("W"), PageBreak(), Paragraph("Index", ParagraphStyle("ih", fontName="Helvetica-Bold", fontSize=14, spaceAfter=6))]
     idx = [["#", "ID", "Thème", "Document", "Exercice", "Page"]]
-    for n, ex in enumerate(order, 1):
-        idx.append([str(n), ex[0], ex[1], DOCS[ex[2]][0], ex[3], str(pagelog.get(ex[0], "?"))])
-    it = Table(idx, colWidths=[8 * mm, 12 * mm, 24 * mm, 83 * mm, 34 * mm, 12 * mm], repeatRows=1)
-    it.setStyle(TableStyle([("FONT", (0, 0), (-1, 0), "Helvetica-Bold", 8), ("FONT", (0, 1), (-1, -1), "Helvetica", 7.8),
-                            ("LINEBELOW", (0, 0), (-1, 0), 0.8, colors.black), ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f3f3f3")]),
-                            ("BOTTOMPADDING", (0, 0), (-1, -1), 3), ("TOPPADDING", (0, 0), (-1, -1), 3)]))
+    for i, ex in enumerate(sorted_by_print(pages), 1):
+        idx.append([str(i), ex[0], ex[1], DOCS[ex[2]][0], ex[3], str(pagelog.get(ex[0], "?"))])
+    it = Table(idx, colWidths=[9 * mm, 13 * mm, 24 * mm, 96 * mm, 38 * mm, 10 * mm], repeatRows=1)
+    it.setStyle(TableStyle([("FONT", (0, 0), (-1, 0), "Helvetica-Bold", 7), ("FONT", (0, 1), (-1, -1), "Helvetica", 6.8),
+                            ("LINEBELOW", (0, 0), (-1, 0), 0.6, colors.black), ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f3f3f3")]),
+                            ("BOTTOMPADDING", (0, 0), (-1, -1), 1.4), ("TOPPADDING", (0, 0), (-1, -1), 1.4)]))
     st.append(it)
     doc.build(st)
     return pdf
 
 
-def block_height_mm(ex):
-    """Estimated height (mm) of an exercise block: image + 2-line caption + spacing."""
-    path, (pw, ph) = make_crop(ex[0], ex[4])
-    cw = A4[0] - 36 * mm
-    w = min(cw, pw / 200 * 25.4 * mm * 1.05, (pw / ph) * 225 * mm)
-    return w * ph / pw / mm + 21
-
-
-def pack(order, avail_mm=A4[1] / mm - 32, window=8):
-    """Look-ahead packing: keep the shuffled order, but when the next block does not fit on the
-    current page take the first of the next `window` blocks that does (blocks never split)."""
-    rem, out, left = list(order), [], avail_mm
-    while rem:
-        pick = next((i for i, e in enumerate(rem[:window]) if block_height_mm(e) <= left), None)
-        if pick is None:
-            left, pick = avail_mm, 0
-        e = rem.pop(pick)
-        out.append(e)
-        left -= block_height_mm(e)
-    return out
+def sorted_by_print(pages):
+    return [e for _, cols in pages for col in cols for e in col]
 
 
 def by_lesson():
     """One PDF per topic, exercises in source order (series by series), no shuffle."""
     key = lambda e: (DOCS[e[2]][0].startswith('Contrôle') or DOCS[e[2]][0].startswith('Feuille'), DOCS[e[2]][0], e[0])
     for t in TOPICS:
-        order = pack(sorted([e for e in EXERCISES if e[1] == t], key=key))
+        pages = plan(sorted([e for e in EXERCISES if e[1] == t], key=key))
         log = {}
         name = f"lecon_{t.lower()}.pdf"
-        build(order, log, outname=name, lesson=t)
-        print(build(order, log, outname=name, lesson=t), len(order))
+        build(pages, log, outname=name, lesson=t)
+        print(build(pages, log, outname=name, lesson=t), len(sorted_by_print(pages)))
 
 
 def main():
     order = EXERCISES[:]
     random.Random(SEED).shuffle(order)
-    order = pack(order)
+    pages = plan(order); order = sorted_by_print(pages)
     log = {}
-    build(order, log)          # pass 1: learn page numbers
-    pdf = build(order, log)    # pass 2: index now filled (index is after the exercises, so pages do not move)
+    build(pages, log)          # pass 1: learn page numbers
+    pdf = build(pages, log)    # pass 2: index now filled (index is after the exercises, so pages do not move)
     with open(os.path.join(OUT, "exercices.csv"), "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["id", "topic", "language", "source", "link", "document", "exercise", "pdf_order", "pdf_page", "seed"])
