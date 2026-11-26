@@ -219,6 +219,9 @@ def build(pages, pagelog, outname=None, lesson=None, flat=None, cover=None):
                             ("LINEBELOW", (0, 0), (-1, 0), 0.6, colors.black), ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f3f3f3")]),
                             ("BOTTOMPADDING", (0, 0), (-1, -1), 1.4), ("TOPPADDING", (0, 0), (-1, -1), 1.4)]))
     st.append(it)
+    if cover == "count":                      # page 1: only the exercise count
+        idx = next(i for i, f in enumerate(st) if isinstance(f, NextPageTemplate))
+        st[:idx] = [Spacer(1, 60 * mm), Paragraph(f"{len(flat)} exercices", h1)]
     doc.build(st)
     return pdf
 

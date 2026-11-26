@@ -84,8 +84,8 @@ def make(items, name, cover, csvname):
 
 
 make(printed + new, f"complet_1bacsm_seed{SEED}.pdf",
-     ("Recueil complet — Entraînement 1ère Bac SM", "Tous les énoncés réunis (PDF imprimé + suppléments 1, 2, 3) · Ensembles · Applications · Fonctions · Suites"),
+     "count",
      "complet_exercices.csv")
 make(new, f"nouveaux_1bacsm_seed{SEED}.pdf",
-     ("Nouveaux énoncés — Entraînement 1ère Bac SM", "Exercices absents du PDF imprimé (suppléments 1, 2, 3) · Ensembles · Applications · Fonctions · Suites"),
+     "count",
      "nouveaux_exercices.csv")
