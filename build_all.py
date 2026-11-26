@@ -64,6 +64,9 @@ for i, (e, pg) in enumerate(zip(tex, pages), 1):
     RATE[tid], ORIGIN[tid], LANG[tid] = e["diff"], "Supplément 3", "French (traduit de l'arabe)"
     SRC[tid] = "manti.01.ma"
 
+V2 = os.path.join(HERE, "work", "ratings_v2.json")     # relative re-rating of the whole set (tools/rerate.py)
+if os.path.exists(V2):
+    RATE.update({k: (int(v) if float(v).is_integer() else v) for k, v in json.load(open(V2)).items()})
 B.RTXT = lambda i: "%s/20" % RATE[i] if RATE.get(i) is not None else ""
 
 
