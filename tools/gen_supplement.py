@@ -17,11 +17,11 @@ LINK = {x["id"][:6]: "https://drive.google.com/file/d/%s/view" % x["id"] for x i
 # index in manifest -> (topic, difficulty /20)
 E, A, F, SU = "Ensembles", "Applications", "Fonctions", "Suites"
 PICK = {
-    8: (E, 9), 9: (E, 8), 16: (E, 7), 76: (E, 11), 80: (E, 7), 94: (E, 8), 110: (E, 8), 126: (E, 8), 142: (E, 10), 151: (E, 7), 152: (E, 8),
+    9: (E, 8), 16: (E, 7), 76: (E, 11), 94: (E, 8), 110: (E, 8), 126: (E, 8), 142: (E, 10), 151: (E, 7), 152: (E, 8),
     17: (A, 11), 81: (A, 11), 95: (A, 11), 96: (A, 9), 106: (A, 12), 120: (A, 11), 127: (A, 11), 137: (A, 11), 153: (A, 9), 154: (A, 11),
-    1: (SU, 10), 3: (SU, 7), 5: (SU, 8), 7: (SU, 9), 18: (SU, 12), 35: (SU, 6), 46: (SU, 12), 47: (SU, 11), 71: (SU, 9), 72: (SU, 13), 103: (SU, 11),
+    3: (SU, 7), 5: (SU, 8), 7: (SU, 9), 18: (SU, 12), 35: (SU, 6), 46: (SU, 12), 47: (SU, 11), 71: (SU, 9), 72: (SU, 13), 103: (SU, 11),
     111: (SU, 9), 112: (SU, 12), 128: (SU, 10), 135: (SU, 11), 136: (SU, 10), 146: (SU, 11), 74: (F, 12),
-    6: (F, 11), 11: (F, 10), 12: (F, 11), 25: (F, 10), 26: (F, 13), 49: (F, 9), 50: (F, 12), 66: (F, 10), 67: (F, 11), 73: (F, 9), 78: (F, 12),
+    11: (F, 10), 25: (F, 10), 26: (F, 13), 49: (F, 9), 50: (F, 12), 66: (F, 10), 67: (F, 11), 73: (F, 9), 78: (F, 12),
     82: (F, 8), 83: (F, 13), 89: (F, 13), 121: (F, 11), 129: (F, 12), 133: (F, 6), 134: (F, 11), 140: (F, 8), 141: (F, 12), 145: (F, 9), 150: (F, 8),
     155: (F, 6), 157: (F, 13), 158: (F, 9),
 }
@@ -61,8 +61,10 @@ for j, (t, d) in sorted(PICK.items()):
         im = stack([prev.crop((0, prev.height - 76, prev.width, prev.height)), part(e, 0)])
     elif j == 47:
         im = part(e, 0); im = im.crop((0, 0, im.width, 700))
-    elif j == 80:
-        im = part(e, 0); im = im.crop((0, 0, im.width, im.height - 44))
+    elif j == 76:                                  # two-column page: left column only (Exercice 1); Exercice 2 is a MANUAL crop
+        im = page("dv_22", 1).crop((68, 222, 728, 669))
+    elif j in (83, 106, 134):                      # drop the separate BONUS exercise printed under it
+        im = part(e, 0); im = im.crop((0, 0, im.width, {83: 1290, 106: 795, 134: 470}[j]))
     elif j == 81:
         im = part(e, 0); im = im.crop((0, 30, im.width, im.height - 14))
     elif j == 150:
@@ -81,11 +83,14 @@ MANUAL = [
     ("dv_09", 1, (0, 462, 1653, 1266), SU, 11, "Ex. 2"),
     ("dv_09", 1, (0, 1290, 1653, 2050), A, 11, "Ex. 3"),
     ("dv_36", 1, (87, 285, 1561, 1575), F, 12, "Ex. 1"),
-    ("dv_36", 1, (87, 1558, 764, 2250), E, 8, "Ex. 2"),
+    ("dv_36", 1, (87, 1558, 764, 1970), E, 8, "Ex. 2"),
     ("dv_36", 1, (770, 1558, 1561, 2250), E, 8, "Ex. 3"),
 ]
 for pre, pg, box, t, d, lab in MANUAL:
     items.append((fname(pre), lab, page(pre, pg).crop(box), t, d))
+# dv_22 Exercice 2: its start is under Exercice 1 (left column), its questions in the right column
+p22 = page("dv_22", 1)
+items.append((fname("dv_22"), "Ex. 2", stack([p22.crop((68, 670, 728, 815)), p22.crop((735, 225, 1590, 715))]), E, 9))
 
 rows = []
 for n, (stem, lab, im, t, d) in enumerate(items, 1):
