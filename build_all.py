@@ -40,7 +40,7 @@ os.makedirs(TDIR, exist_ok=True); os.makedirs(BUILD, exist_ok=True)
 L = [r"""\documentclass[10pt]{article}
 \usepackage[T1]{fontenc}\usepackage[utf8]{inputenc}\usepackage[french]{babel}\usepackage{lmodern}
 \usepackage{amsmath,amssymb}\usepackage[inline]{enumitem}
-\usepackage[paperwidth=112mm,paperheight=400mm,margin=3mm]{geometry}
+\usepackage[paperwidth=170mm,paperheight=400mm,left=3mm,top=3mm,textwidth=106mm]{geometry}
 \setlength{\parindent}{0pt}\pagestyle{empty}\setlist{nosep,leftmargin=*,itemsep=0.8pt}\setlist[enumerate,2]{label=\alph*)}
 \begin{document}"""]
 for e in tex:
@@ -58,7 +58,7 @@ for i, (e, pg) in enumerate(zip(tex, pages), 1):
     tid = "T%03d" % i
     im = Image.open(pg).convert("RGB")
     bb = im.convert("L").point(lambda v: 255 if v < 200 else 0).getbbox()
-    im.crop((0, 0, im.width, min(im.height, bb[3] + 12))).save(os.path.join(TDIR, tid + ".png"), dpi=(200, 200))
+    im.crop((0, 0, max(int(112 / 25.4 * 200), bb[2] + 12), min(im.height, bb[3] + 12))).save(os.path.join(TDIR, tid + ".png"), dpi=(200, 200))
     B.DOCS.setdefault(e["doc"], (e["doc"], e["link"]))
     new.append((tid, e["topic"], e["doc"], e["label"] + " (traduit de l'arabe)", [("@png", os.path.join(TDIR, tid + ".png"))]))
     RATE[tid], ORIGIN[tid], LANG[tid] = e["diff"], "Supplément 3", "French (traduit de l'arabe)"
