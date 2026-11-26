@@ -34,7 +34,7 @@ L = [r"""\documentclass[10pt,a4paper]{article}
 \usepackage{lmodern}\usepackage{amsmath,amssymb}\usepackage{multicol}\usepackage[inline]{enumitem}
 \usepackage[a4paper,margin=10mm,bottom=14mm,footskip=7mm]{geometry}\usepackage{longtable,booktabs}
 \setlength{\columnsep}{6mm}\setlength{\parindent}{0pt}\setlength{\columnseprule}{0.2pt}
-\setlist{nosep,leftmargin=*,itemsep=0.6pt}\setlist[enumerate*]{itemjoin={\quad},afterlabel={\,}}\setlist[enumerate,2]{label=\alph*)}
+\setlist{nosep,leftmargin=*,itemsep=0.6pt}\setlist[enumerate,2]{label=\alph*)}
 \pagestyle{plain}\renewcommand{\arraystretch}{1.08}
 \newcommand{\exo}[3]{\par\noindent\begin{minipage}{\columnwidth}\small\label{ex:#1}#3\par\vspace{0.6mm}
 {\fontsize{6.3}{7.4}\selectfont\color[gray]{0.33}#2\par}\end{minipage}\par\vspace{2.6mm}\goodbreak}
