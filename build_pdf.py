@@ -169,7 +169,7 @@ def plan(order, window=16):
     return pages
 
 
-def build(pages, pagelog, outname=None, lesson=None, flat=None):
+def build(pages, pagelog, outname=None, lesson=None, flat=None, cover=None):
     os.makedirs(OUT, exist_ok=True)
     pdf = os.path.join(OUT, outname or f"math_manti_1bacsm_seed{SEED}.pdf")
     flat = flat or [e for _, cols in pages for col in cols for e in col]
@@ -190,8 +190,8 @@ def build(pages, pagelog, outname=None, lesson=None, flat=None):
     cap = ParagraphStyle("cap", fontName="Helvetica", fontSize=6.3, leading=7.6, textColor=colors.HexColor("#555555"), spaceBefore=1)
     st = []
     counts = {t: sum(1 for e in flat if e[1] == t) for t in TOPICS}
-    st += [Spacer(1, 45 * mm), Paragraph(("Leçon : " + lesson + " — " if lesson else "") + "Entraînement — 1ère Bac Sciences Mathématiques", h1),
-           Paragraph("Énoncés seuls" if lesson else "Énoncés seuls · Ensembles · Applications · Fonctions · Suites", sub), Spacer(1, 12 * mm)]
+    st += [Spacer(1, 45 * mm), Paragraph(cover[0] if cover else ("Leçon : " + lesson + " — " if lesson else "") + "Entraînement — 1ère Bac Sciences Mathématiques", h1),
+           Paragraph(cover[1] if cover else ("Énoncés seuls" if lesson else "Énoncés seuls · Ensembles · Applications · Fonctions · Suites"), sub), Spacer(1, 12 * mm)]
     rows = [["Thème", "Exercices"]] + [[t, str(counts[t])] for t in TOPICS if counts[t]] + [["Total", str(len(flat))]]
     tb = Table(rows, colWidths=[60 * mm, 30 * mm], hAlign="CENTER")
     tb.setStyle(TableStyle([("FONT", (0, 0), (-1, 0), "Helvetica-Bold", 10), ("FONT", (0, 1), (-1, -2), "Helvetica", 10),
