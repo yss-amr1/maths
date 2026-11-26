@@ -70,9 +70,10 @@ if os.path.exists(V2):
 B.RTXT = lambda i: "%s/20" % RATE[i] if RATE.get(i) is not None else ""
 
 
-def make(items, name, cover, csvname):
+def make(items, name, cover, csvname, shuffle=True):
     order = items[:]
-    random.Random(SEED).shuffle(order)
+    if shuffle:
+        random.Random(SEED).shuffle(order)
     pages = B.plan(order); order = B.sorted_by_print(pages)
     log = {}
     B.build(pages, log, outname=name, cover=cover)
@@ -86,9 +87,13 @@ def make(items, name, cover, csvname):
     print(pdf, len(order), "exercices")
 
 
-make(printed + new, f"complet_1bacsm_seed{SEED}.pdf",
-     "count",
-     "complet_exercices.csv")
-make(new, f"nouveaux_1bacsm_seed{SEED}.pdf",
-     "count",
-     "nouveaux_exercices.csv")
+if "--hardest" in sys.argv:          # hardest exercises only (rating >= 12.5), hardest first
+    hard = sorted([e for e in printed + new if float(RATE[e[0]]) >= 12.5], key=lambda e: (-float(RATE[e[0]]), e[1], e[0]))
+    make(hard, "difficiles_1bacsm.pdf", "count", "difficiles_exercices.csv", shuffle=False)
+else:
+    make(printed + new, f"complet_1bacsm_seed{SEED}.pdf",
+         "count",
+         "complet_exercices.csv")
+    make(new, f"nouveaux_1bacsm_seed{SEED}.pdf",
+         "count",
+         "nouveaux_exercices.csv")
