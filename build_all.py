@@ -70,11 +70,11 @@ if os.path.exists(V2):
 B.RTXT = lambda i: "%s/20" % RATE[i] if RATE.get(i) is not None else ""
 
 
-def make(items, name, cover, csvname, shuffle=True):
+def make(items, name, cover, csvname, shuffle=True, planner=None):
     order = items[:]
     if shuffle:
         random.Random(SEED).shuffle(order)
-    pages = B.plan(order); order = B.sorted_by_print(pages)
+    pages = (planner or B.plan)(order); order = B.sorted_by_print(pages)
     log = {}
     B.build(pages, log, outname=name, cover=cover)
     pdf = B.build(pages, log, outname=name, cover=cover)
@@ -87,9 +87,48 @@ def make(items, name, cover, csvname, shuffle=True):
     print(pdf, len(order), "exercices")
 
 
-if "--hardest" in sys.argv:          # hardest exercises only (rating >= 12.5), hardest first
-    hard = sorted([e for e in printed + new if float(RATE[e[0]]) >= 12.5], key=lambda e: (-float(RATE[e[0]]), e[1], e[0]))
-    make(hard, "difficiles_1bacsm.pdf", "count", "difficiles_exercices.csv", shuffle=False)
+RANKKEY = lambda e: (-float(RATE[e[0]]), e[1], e[0])      # same order as classement_difficulte.pdf
+
+
+def plan_ranked(order):
+    """Like B.plan, but scores never increase along the print order: exercises may only be
+    reordered among those with the same score (to fill pages)."""
+    rem, pages = list(order), []
+    sc = lambda e: float(RATE[e[0]])
+    while rem:
+        cls = B.layout(rem[0])[0]
+        cols = 2 if cls == "C" else 1
+        taken, out, stop = [], [], False
+        for _ in range(cols):
+            left, col = B.FRAME_H - 1.5 * B.mm, []
+            while not stop:
+                free = [e for e in rem if e not in taken]
+                if not free:
+                    break
+                s_cur = sc(free[0])
+                same = [e for e in free if sc(e) == s_cur]
+                cands = [e for e in same if B.layout(e)[0] == cls]
+                if len(cands) < len(same) and not cands:
+                    stop = True                      # next score level starts with the other page type
+                    break
+                fit = next((e for e in cands if B.block_h(e) <= left), None)
+                if fit is None:
+                    if len(cands) < len(same):
+                        stop = True
+                    break                            # column full
+                col.append(fit); taken.append(fit); left -= B.block_h(fit)
+            out.append(col)
+        if not taken:
+            taken = [rem[0]]; out = [[rem[0]]] + [[] for _ in range(cols - 1)]
+        for e in taken:
+            rem.remove(e)
+        pages.append((cls, out))
+    return pages
+if "--ranked" in sys.argv:           # all exercises, in difficulty-ranking order
+    make(sorted(printed + new, key=RANKKEY), "classement_complet_1bacsm.pdf", "count", "classement_complet_exercices.csv", shuffle=False, planner=plan_ranked)
+elif "--hardest" in sys.argv:          # hardest exercises only (rating >= 12.5), hardest first
+    hard = [e for e in printed + new if float(RATE[e[0]]) >= 12.5]
+    make(sorted(hard, key=RANKKEY), "difficiles_1bacsm.pdf", "count", "difficiles_exercices.csv", shuffle=False, planner=plan_ranked)
 else:
     make(printed + new, f"complet_1bacsm_seed{SEED}.pdf",
          "count",
