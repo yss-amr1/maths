@@ -1,0 +1,27 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 1920
+PlayResY: 1080
+WrapStyle: 2
+
+[V4+ Styles]
+Format: Name,Fontname,Fontsize,PrimaryColour,SecondaryColour,OutlineColour,BackColour,Bold,Italic,Underline,StrikeOut,ScaleX,ScaleY,Spacing,Angle,BorderStyle,Outline,Shadow,Alignment,MarginL,MarginR,MarginV,Encoding
+Style: Default,DejaVu Sans,78,&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,6,2,2,60,60,100,1
+
+[Events]
+Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
+Dialogue: 0,0:00:00.30,0:00:02.80,Default,,0,0,0,,{\fad(200,150)\t(0,250,\fscx108\fscy108)\t(250,450,\fscx100\fscy100)}مول فـ جولة\N{\c&H4AD5FF&}السبع عين{\c&HFFFFFF&}\N{\fs56}BLACK FRIDAY
+Dialogue: 0,0:00:03.30,0:00:06.00,Default,,0,0,0,,{\fad(200,150)\t(0,250,\fscx108\fscy108)\t(250,450,\fscx100\fscy100)}أجواء\N{\c&H4AD5FF&}تتنساش ما{\c&HFFFFFF&}
+Dialogue: 0,0:00:06.50,0:00:10.50,Default,,0,0,0,,{\fad(200,150)\t(0,250,\fscx108\fscy108)\t(250,450,\fscx100\fscy100)}بين جولة\N{\c&H4AD5FF&}المحلات{\c&HFFFFFF&}
+Dialogue: 0,0:00:11.00,0:00:15.00,Default,,0,0,0,,{\fad(200,150)\t(0,250,\fscx108\fscy108)\t(250,450,\fscx100\fscy100)}رقص عرض\N{\c&H4AD5FF&}خرافي{\c&HFFFFFF&}
+Dialogue: 0,0:00:15.50,0:00:20.00,Default,,0,0,0,,{\fad(200,150)\t(0,250,\fscx108\fscy108)\t(250,450,\fscx100\fscy100)}عالمية ماركات\N{\c&H4AD5FF&}رائع وديكور{\c&HFFFFFF&}
+Dialogue: 0,0:00:24.50,0:00:29.30,Default,,0,0,0,,{\fad(200,150)\t(0,250,\fscx108\fscy108)\t(250,450,\fscx100\fscy100)}{\c&H4AD5FF&}تخفيضات{\c&HFFFFFF&}\N{\fs56}BLACK FRIDAY
+Dialogue: 0,0:00:29.80,0:00:34.30,Default,,0,0,0,,{\fad(200,150)\t(0,250,\fscx108\fscy108)\t(250,450,\fscx100\fscy100)}الطاقة\N{\c&H4AD5FF&}والحماس{\c&HFFFFFF&}
+Dialogue: 0,0:00:34.80,0:00:39.80,Default,,0,0,0,,{\fad(200,150)\t(0,250,\fscx108\fscy108)\t(250,450,\fscx100\fscy100)}ديكور\N{\c&H4AD5FF&}روعة وأضواء{\c&HFFFFFF&}
+Dialogue: 0,0:00:44.30,0:00:48.30,Default,,0,0,0,,{\fad(200,150)\t(0,250,\fscx108\fscy108)\t(250,450,\fscx100\fscy100)}كله الجمهور\N{\c&H4AD5FF&}متفاعل{\c&HFFFFFF&}
+Dialogue: 0,0:00:48.80,0:00:53.80,Default,,0,0,0,,{\fad(200,150)\t(0,250,\fscx108\fscy108)\t(250,450,\fscx100\fscy100)}كله الجو\N{\c&H4AD5FF&}حياة{\c&HFFFFFF&}
+Dialogue: 0,0:00:58.30,0:01:02.80,Default,,0,0,0,,{\fad(200,150)\t(0,250,\fscx108\fscy108)\t(250,450,\fscx100\fscy100)}حركات\N{\c&H4AD5FF&}تتفوتش ما{\c&HFFFFFF&}
+Dialogue: 0,0:01:03.30,0:01:07.30,Default,,0,0,0,,{\fad(200,150)\t(0,250,\fscx108\fscy108)\t(250,450,\fscx100\fscy100)}مول\N{\c&H4AD5FF&}وواسع كبير{\c&HFFFFFF&}
+Dialogue: 0,0:01:11.80,0:01:16.30,Default,,0,0,0,,{\fad(200,150)\t(0,250,\fscx108\fscy108)\t(250,450,\fscx100\fscy100)}شكون\N{\c&H4AD5FF&}يعاود كيبغي{\c&HFFFFFF&}
+Dialogue: 0,0:01:21.80,0:01:26.30,Default,,0,0,0,,{\fad(200,150)\t(0,250,\fscx108\fscy108)\t(250,450,\fscx100\fscy100)}عرض\N{\c&H4AD5FF&}فالبال كيبقى{\c&HFFFFFF&}
+Dialogue: 0,0:01:35.30,0:01:38.30,Default,,0,0,0,,{\fad(200,150)\t(0,250,\fscx108\fscy108)\t(250,450,\fscx100\fscy100)}{\c&H4AD5FF&}فالقناة اشتركوا{\c&HFFFFFF&}\N{\fs56}le monde de ines\N{\fs56}إيناس عالم

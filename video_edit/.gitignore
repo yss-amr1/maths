@@ -1,0 +1,9 @@
+src/
+out/*.mp4
+work/seg/
+work/sseg/
+work/*.wav
+work/*.jpg
+work/*.png
+work/D.json
+work/t*.ass

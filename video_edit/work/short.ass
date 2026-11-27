@@ -1,0 +1,19 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 1080
+PlayResY: 1920
+WrapStyle: 2
+
+[V4+ Styles]
+Format: Name,Fontname,Fontsize,PrimaryColour,SecondaryColour,OutlineColour,BackColour,Bold,Italic,Underline,StrikeOut,ScaleX,ScaleY,Spacing,Angle,BorderStyle,Outline,Shadow,Alignment,MarginL,MarginR,MarginV,Encoding
+Style: Default,DejaVu Sans,84,&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,6,2,2,60,60,430,1
+
+[Events]
+Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
+Dialogue: 0,0:00:00.30,0:00:03.00,Default,,0,0,0,,{\fad(200,150)\t(0,250,\fscx108\fscy108)\t(250,450,\fscx100\fscy100)}أجواء\N{\c&H4AD5FF&}تتنساش ما{\c&HFFFFFF&}
+Dialogue: 0,0:00:03.50,0:00:07.50,Default,,0,0,0,,{\fad(200,150)\t(0,250,\fscx108\fscy108)\t(250,450,\fscx100\fscy100)}رقص عرض\N{\c&H4AD5FF&}خرافي{\c&HFFFFFF&}
+Dialogue: 0,0:00:12.00,0:00:16.50,Default,,0,0,0,,{\fad(200,150)\t(0,250,\fscx108\fscy108)\t(250,450,\fscx100\fscy100)}الطاقة\N{\c&H4AD5FF&}والحماس{\c&HFFFFFF&}
+Dialogue: 0,0:00:21.00,0:00:25.00,Default,,0,0,0,,{\fad(200,150)\t(0,250,\fscx108\fscy108)\t(250,450,\fscx100\fscy100)}كله الجمهور\N{\c&H4AD5FF&}متفاعل{\c&HFFFFFF&}
+Dialogue: 0,0:00:29.50,0:00:34.00,Default,,0,0,0,,{\fad(200,150)\t(0,250,\fscx108\fscy108)\t(250,450,\fscx100\fscy100)}حركات\N{\c&H4AD5FF&}تتفوتش ما{\c&HFFFFFF&}
+Dialogue: 0,0:00:38.50,0:00:43.00,Default,,0,0,0,,{\fad(200,150)\t(0,250,\fscx108\fscy108)\t(250,450,\fscx100\fscy100)}شكون\N{\c&H4AD5FF&}يعاود كيبغي{\c&HFFFFFF&}
+Dialogue: 0,0:00:43.50,0:00:46.50,Default,,0,0,0,,{\fad(200,150)\t(0,250,\fscx108\fscy108)\t(250,450,\fscx100\fscy100)}{\c&H4AD5FF&}فالقناة اشتركوا{\c&HFFFFFF&}\N{\fs56}le monde de ines\N{\fs56}إيناس عالم
