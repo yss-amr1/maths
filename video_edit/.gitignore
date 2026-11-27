@@ -13,3 +13,4 @@ work/stf/
 work/seg2/
 work/*.log
 work/*.json.bak
+pub/
