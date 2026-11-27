@@ -8,3 +8,8 @@ work/*.png
 work/D.json
 work/t*.ass
 work/caps/
+web/
+work/stf/
+work/seg2/
+work/*.log
+work/*.json.bak
